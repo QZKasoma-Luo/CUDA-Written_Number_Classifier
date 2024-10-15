@@ -2,6 +2,9 @@
 
 
 
+
+
+
 #include <stdio.h>
 #include <stdlib.h>
 #include <cuda_runtime.h>
@@ -13,18 +16,22 @@
 #include <iostream>
 
 
+#define WIDTH 28;
+#define HEIGHT 28;
+#define IMGSIZE 784
+
 
 // CPU baseline
 
 
-float* read_image_file_to_vector(const char* filename, int image_size) {
+float* read_image_file_to_vector(const char* filename) {
     FILE *file = fopen(filename, "rb");
     if (!file) {
         printf("Unable to open file %s!\n", filename);
         return NULL;
     }
 
-    float *vector = (float*)malloc(image_size * sizeof(float));
+    float *vector = (float*)malloc(IMGSIZE * sizeof(float));
     if (!vector) {
         printf("Memory allocation failed!\n");
         fclose(file);
@@ -32,7 +39,7 @@ float* read_image_file_to_vector(const char* filename, int image_size) {
     }
 
     // Read pixel data and normalize
-    for (int i = 0; i < image_size; i++) {
+    for (int i = 0; i < IMGSIZE; i++) {
         unsigned char pixel;
         size_t read_items = fread(&pixel, sizeof(unsigned char), 1, file);
         if (read_items != 1) {
@@ -41,18 +48,14 @@ float* read_image_file_to_vector(const char* filename, int image_size) {
             fclose(file);
             return NULL;
         }
-        vector[i] = pixel / 255.0f;  // Normalize the pixel value to [0, 1]
+        vector[i] = pixel / 255.0f;
     }
 
     fclose(file);
     return vector;
 }
 
-int cpu_parse() {
-    const char* foldername = "/content/drive/MyDrive/idx3_images/"; // Replace with your folder name
-    int image_width = 28;  // Set your image width
-    int image_height = 28; // Set your image height
-    int image_size = image_width * image_height; // Total pixels in one image
+int cpu_parse(const char* foldername) {
 
     DIR *dir;
     struct dirent *entry;
@@ -75,7 +78,7 @@ int cpu_parse() {
 
         // assume all files in the folder are images
         // Process each image file
-        float* vector = read_image_file_to_vector(filepath, image_size);
+        float* vector = read_image_file_to_vector(filepath);
         if (vector) {
             // printf("Successfully processed image file: %s\n", filepath);
 
@@ -95,11 +98,11 @@ int cpu_parse() {
 }
 
 // CUDA kernel 
-__global__ void normalize(unsigned char* d_pixels, float* d_vector, int total_pixels) {
+__global__ void normalize(unsigned char* d_pixels, float* d_vector) {
     int idx = blockIdx.x * blockDim.x + threadIdx.x;
 
     // normalize pixel values
-    if (idx < total_pixels) {
+    if (idx < IMGSIZE) {
         d_vector[idx] = d_pixels[idx] / 255.0f;
     }
 }
@@ -112,10 +115,6 @@ int process_images(const char* foldername) {
     struct dirent *entry;
     struct stat file_stat;
 
-    int image_width = 28;
-    int image_height = 28;
-    int image_size = image_width * image_height;
-
     // Open the directory
     if ((dir = opendir(foldername)) == NULL) {
         perror("opendir");
@@ -123,7 +122,7 @@ int process_images(const char* foldername) {
     }
 
     // Allocate memory for pixel data on CPU
-    unsigned char *pixels = (unsigned char*)malloc(image_size * sizeof(unsigned char));
+    unsigned char *pixels = (unsigned char*)malloc(IMGSIZE * sizeof(unsigned char));
     if (!pixels) {
         printf("Memory allocation failed!\n");
         closedir(dir);
@@ -135,7 +134,7 @@ int process_images(const char* foldername) {
     float *d_vector;
     cudaError_t err;
 
-    err = cudaMalloc((void**)&d_pixels, image_size * sizeof(unsigned char));
+    err = cudaMalloc((void**)&d_pixels, IMGSIZE * sizeof(unsigned char));
     if (err != cudaSuccess) {
         printf("CUDA malloc failed for d_pixels: %s\n", cudaGetErrorString(err));
         free(pixels);
@@ -143,7 +142,7 @@ int process_images(const char* foldername) {
         return 1;
     }
 
-    err = cudaMalloc((void**)&d_vector, image_size * sizeof(float));
+    err = cudaMalloc((void**)&d_vector, IMGSIZE * sizeof(float));
     if (err != cudaSuccess) {
         printf("CUDA malloc failed for d_vector: %s\n", cudaGetErrorString(err));
         cudaFree(d_pixels);
@@ -174,8 +173,8 @@ int process_images(const char* foldername) {
         }
 
         // Read pixel data from the image file
-        size_t read_items = fread(pixels, sizeof(unsigned char), image_size, file);
-        if (read_items != image_size) {
+        size_t read_items = fread(pixels, sizeof(unsigned char), IMGSIZE, file);
+        if (read_items != IMGSIZE) {
             printf("Error reading pixel data from %s!\n", filepath);
             fclose(file);
             cudaFree(d_pixels);
@@ -188,7 +187,7 @@ int process_images(const char* foldername) {
         fclose(file);
 
         // Copy data from CPU to GPU
-        err = cudaMemcpy(d_pixels, pixels, image_size * sizeof(unsigned char), cudaMemcpyHostToDevice);
+        err = cudaMemcpy(d_pixels, pixels, IMGSIZE * sizeof(unsigned char), cudaMemcpyHostToDevice);
         if (err != cudaSuccess) {
             printf("CUDA memcpy failed from Host to Device for d_pixels: %s\n", cudaGetErrorString(err));
             cudaFree(d_pixels);
@@ -198,11 +197,11 @@ int process_images(const char* foldername) {
             return 1;
         }
 
-        // Launch kernel to process the image
+        // Launch kernel
         int threadsPerBlock = 256;
-        int blocksPerGrid = (image_size + threadsPerBlock - 1) / threadsPerBlock;
+        int blocksPerGrid = (IMGSIZE + threadsPerBlock - 1) / threadsPerBlock;
 
-        normalize<<<blocksPerGrid, threadsPerBlock>>>(d_pixels, d_vector, image_size);
+        normalize<<<blocksPerGrid, threadsPerBlock>>>(d_pixels, d_vector);
 
         // Synchronize to ensure kernel execution is complete
         cudaDeviceSynchronize();
@@ -234,7 +233,7 @@ int main() {
     const char* foldername = "/content/drive/MyDrive/idx3_images/";
 
     auto const cpu_start = std::chrono::high_resolution_clock::now();
-    cpu_parse();
+    cpu_parse("/content/drive/MyDrive/idx3_images/");
     auto const cpu_end = std::chrono::high_resolution_clock::now();
 
     std::cout << "CPU Baseline time: "
