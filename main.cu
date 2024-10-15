@@ -18,7 +18,7 @@
 
 #define WIDTH 28;
 #define HEIGHT 28;
-#define IMGSIZE 784
+#define IMGSIZE WIDTH * HEIGHT;
 
 
 // CPU baseline
