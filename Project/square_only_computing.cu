@@ -31,10 +31,9 @@ void init_matrix(int* m, int N){
     }
 }
 int main(){
-    int N = 9;
-    int colums = 3;
-    int rows = 3;
-    int useless_fills = colums*colums-N;
+    int N = 16;
+    int colums = 4;
+    int rows = 4;
     size_t bytes = N * N * sizeof(int);
 
     int *a, *b, *c;
@@ -51,15 +50,20 @@ int main(){
     cudaMemcpy(d_in, a, bytes, cudaMemcpyHostToDevice);
     transpose_parallel_row_square_only<<<128,32>>>(d_in,d_out,max(colums,rows));
     cudaMemcpy(b, d_out, bytes, cudaMemcpyDeviceToHost);
-
-    for (int i = 0; i < 16; i++) { 
-        cout << a[i] << " "; 
+      cout << "matrix A\n";
+    for (int i = 0; i < 4; i++) {
+    for (int j = 0; j < 4; j++) { 
+        cout << a[i*colums+j] << " "; 
     }
-    cout << endl; 
-    for (int i = 0; i < 16; i++) { 
-        cout << b[i] << " "; 
+    cout << endl;
     }
-    cout << endl; 
+      cout << "matrix A transpose\n";
+    for (int i = 0; i < 4; i++) {
+    for (int j = 0; j < 4; j++) { 
+        cout << b[i*colums+j] << " "; 
+    }
+    cout << endl;
+    }
 
 
     return 0;
