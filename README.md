@@ -10,9 +10,8 @@ A CUDA-optimized K-Nearest Neighbors algorithm implementation, designed specific
   - Efficient memory management
   - Vectorized computations
 - Performance enhancements:
-  - 96.65% accuracy on MNIST
+  - 96.65% accuracy on MNIST (Before Optimzing GPU Computation)
   - Significantly faster than CPU implementations
-  - Efficient memory usage with page-locked memory
 
 ## Running on Local Machine
 
