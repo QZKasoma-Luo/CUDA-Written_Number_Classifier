@@ -10,9 +10,8 @@ A CUDA-optimized K-Nearest Neighbors algorithm implementation, designed specific
   - Efficient memory management
   - Vectorized computations
 - Performance enhancements:
-  - 96.65% accuracy on MNIST
+  - 96.65% accuracy on MNIST (Before Optimzing GPU Computation)
   - Significantly faster than CPU implementations
-  - Efficient memory usage with page-locked memory
 
 ## Running on Local Machine
 
@@ -30,28 +29,6 @@ A CUDA-optimized K-Nearest Neighbors algorithm implementation, designed specific
 git clone [repository-url]
 cd [project-directory]
 nvcc -O3 main.cu -o knn
-```
-
-3. Prepare your MNIST dataset with the following structure:
-
-```
-./
-├── train_mnist/
-│   └── MNIST/
-│       └── raw/
-│           ├── train-images-idx3-ubyte
-│           └── train-labels-idx1-ubyte
-└── test_mnist/
-    └── MNIST/
-        └── raw/
-            ├── t10k-images-idx3-ubyte
-            └── t10k-labels-idx1-ubyte
-```
-
-4. Run the program:
-
-```bash
-./knn
 ```
 
 ## Running on Google Colab
