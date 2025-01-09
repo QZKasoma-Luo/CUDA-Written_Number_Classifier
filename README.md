@@ -1,6 +1,6 @@
 # GPU-Accelerated KNN Implementation
 
-A CUDA-optimized K-Nearest Neighbors algorithm implementation, designed specifically for the MNIST dataset. This implementation achieves high performance through GPU acceleration and various optimization techniques.
+A CUDA-optimized K-Nearest Neighbors algorithm implementation, designed specifically for the MNIST dataset. This implementation achieves high performance through GPU acceleration and various optimization techniques. This is Google colab version, if you want to run it on your local machine, nesscary modifcation required.
 
 ## Features
 
@@ -12,24 +12,6 @@ A CUDA-optimized K-Nearest Neighbors algorithm implementation, designed specific
 - Performance enhancements:
   - 96.65% accuracy on MNIST (Before Optimzing GPU Computation)
   - Significantly faster than CPU implementations
-
-## Running on Local Machine
-
-1. Prerequisites:
-
-```
-- CUDA Toolkit (11.0 or later)
-- C++ compiler with C++14 support
-- NVIDIA GPU with CUDA support
-```
-
-2. Clone and Build:
-
-```bash
-git clone [repository-url]
-cd [project-directory]
-nvcc -O3 main.cu -o knn
-```
 
 ## Running on Google Colab
 
